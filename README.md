@@ -10,6 +10,7 @@ You might also use the option to shutdown the robot automatically after 1.5h.
 There is not much to configure:
 
 - Go to the installtion tab
-- turn the saver and it will power off only the arm
+- turn on the saver and it will power off only the arm
 - the robot shutdown is only an option
 
+![image](https://user-images.githubusercontent.com/122785824/212656998-d98067ee-5481-4af9-9b7b-5d00352566ba.png)
