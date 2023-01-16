@@ -1,6 +1,8 @@
 # put_in_saver
 Energy saver for UR Eseries
 
+testet with SDK 1.12+ 
+used 3rdparty lib: easymodbus, can be found in the modbuslib folder. 
 
 This URCap will help you to save energy automatically. 
 It powers off the robotarm after 8 minutes when the robot hasnt been moved or running any programm.
