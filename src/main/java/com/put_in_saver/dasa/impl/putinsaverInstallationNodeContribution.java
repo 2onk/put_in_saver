@@ -26,6 +26,8 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 	private static final String ENABLED_KEY = "enabled";
 	private static final String ENABLEDSHUTDOWN_KEY = "disabled";
 	private static final Boolean DEFAULT_VALUE = false;
+	private final Integer POWEROFF_TIMER_IN_MIN = 12;
+	private final Integer SHUTDOWN_TIMER_IN_MIN = 90;
 
 	private String dashboardRunning = "Running";
 	private String dashboardRobotmode = "Robotmode";
@@ -33,6 +35,7 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 	private Integer tcpY = 0;
 	private Integer tcpZ = 0;
 	private Integer shutdownCounter= 0;
+	private Integer powerOffCounter= 0;
 	private ModbusClient modbusClient = new ModbusClient("127.0.0.1",502);
 	
 	
@@ -104,17 +107,20 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		if (model.get(ENABLED_KEY, DEFAULT_VALUE) == true) {
 			view.setStartButtonEnabled(false);
 			view.setStopButtonEnabled(true);
+			
+			if (model.get(ENABLEDSHUTDOWN_KEY, DEFAULT_VALUE) == true) {
+				view.setStartShutdownButtonEnabled(false);
+				view.setStopShutdownButtonEnabled(true);
+			} else {
+				view.setStartShutdownButtonEnabled(true);
+				view.setStopShutdownButtonEnabled(false);
+			}
+			
 		} else {
 			view.setStartButtonEnabled(true);
 			view.setStopButtonEnabled(false);
-		}
-		
-		if (model.get(ENABLEDSHUTDOWN_KEY, DEFAULT_VALUE) == true) {
-			view.setStartShutdownButtonEnabled(false);
-			view.setStopShutdownButtonEnabled(true);
-		} else {
-			view.setStartShutdownButtonEnabled(true);
 			view.setStopShutdownButtonEnabled(false);
+			view.setStartShutdownButtonEnabled(false);
 		}
 	}
 	
@@ -126,21 +132,26 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 					//check if enabled and get robot status
 					try {
 						getRobotStatus();//get all needed information, running, mode and joints
-						ShutdownCountercheck(); // check if it neccessarry to reset shutdown counter
-						awaitTimer(480000);
-						if(checkRobotStatus() == true && issaverEnabled() == true){ //check after 8 min whether the robot has been used
-							poweroffArm();
-							//System.err.println("sollte ausgeführt haben");
+						awaitTimer(60000); //1 min timer
+			
+						if(checkRobotStatus() == true && issaverEnabled() == true){ //check after 12 min whether the robot has been used
+							powerOffCounter++;
+							if(powerOffCounter == POWEROFF_TIMER_IN_MIN) {
+								poweroffArm();
+							}
 						}
 						else {
-							//System.err.println("hat nicht ausgeführt");
+							resetPowerOffCounter();
 						}
 						
 						if(checkRobotStatusShutdown() == true && issaverEnabled() == true && isShutdownEnabled() == true){
 							shutdownCounter++;
-							if(shutdownCounter == 11) {
+							if(shutdownCounter == SHUTDOWN_TIMER_IN_MIN) {
 								shutdownRobot();
 							}
+						}
+						else {
+							resetShutdownCounter();
 						}
 						
 					} catch(Exception e){
@@ -167,45 +178,24 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		Integer tcpYactual = getModbusHoldingRegister(401)/10;
 		Integer tcpZactual = getModbusHoldingRegister(402)/10;
 		
-		//System.out.println(tcpX);
-		//System.out.println(tcpY);
-		//System.out.println(tcpZ);
-		//System.out.println(tcpXactual);
-		//System.out.println(tcpYactual);
-		//System.out.println(tcpZactual);
-		
-		
 		if(dashboardRunning.equals("Program running: false") == true &&  
 				dashboardRobotmode.equals("Robotmode: RUNNING") == true ||
-				   dashboardRobotmode.equals("Robotmode: IDLE") == true) { //check if program running and robot powered on or in IDLE
+				dashboardRobotmode.equals("Robotmode: IDLE") == true) { //check if program running and robot powered on or in IDLE
 			if(dashboardRunning.equals(runningActual) == true &&  
-					dashboardRobotmode.equals(robotmodeActual) == true &&
-						tcpX.equals(tcpXactual) == true&&
-								tcpY.equals(tcpYactual) == true &&
-								tcpZ.equals(tcpZactual) == true) { //check if program running and robot powered on and position hasnt changed since 8 min
-			return true;
+				dashboardRobotmode.equals(robotmodeActual) == true &&
+				tcpX.equals(tcpXactual) == true&&
+				tcpY.equals(tcpYactual) == true &&
+				tcpZ.equals(tcpZactual) == true) { //check if program running and robot powered on and position hasnt changed since 8 min
+					return true;
 			}
 		}
 		return false;
 	}
 	
-	protected boolean checkRobotStatusShutdown() throws UnknownHostException, IOException, ModbusException {
-		
-		String robotmodeActual = sendDashboardCommand("robotmode");
-		
-		Integer tcpXactual = getModbusHoldingRegister(400)/10;
-		Integer tcpYactual = getModbusHoldingRegister(401)/10;
-		Integer tcpZactual = getModbusHoldingRegister(402)/10;
-		
-		System.out.println(shutdownCounter);
+	protected boolean checkRobotStatusShutdown() throws UnknownHostException, IOException {
 		
 		if(dashboardRobotmode.equals("Robotmode: POWER_OFF") == true) { //check if robot arm is powered off
-			if(dashboardRobotmode.equals(robotmodeActual) == true &&
-						tcpX.equals(tcpXactual) == true&&
-								tcpY.equals(tcpYactual) == true &&
-								tcpZ.equals(tcpZactual) == true) { //check if robot arm is powered off and position hasnt changed since 8 min
 			return true;
-			}
 		}
 		return false;
 	}
@@ -230,21 +220,18 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 			e.printStackTrace();
 		}
 		
-		//System.out.println(dashboardRunning);
-		//System.out.println(dashboardRobotmode);
-		
 	}
 	
 	public void resetShutdownCounter() {
 		shutdownCounter = 0;
 	}
 	
-	public void ShutdownCountercheck() {
-		if(dashboardRobotmode.equals("Robotmode: RUNNING") == true || dashboardRobotmode.equals("Robotmode: IDLE") == true) { //check if powered on and reset shutdown counter
-			resetShutdownCounter();
-		}
+	public void resetPowerOffCounter() {
+		powerOffCounter = 0;
 	}
+	
 	protected void poweroffArm() throws UnknownHostException, IOException, InterruptedException {
+		resetPowerOffCounter();
 		sendDashboardCommand("popup Roboterarm wird durch URCap in PowerOff geschickt");
 		Thread.sleep(5000);
 		sendDashboardCommand("power off");

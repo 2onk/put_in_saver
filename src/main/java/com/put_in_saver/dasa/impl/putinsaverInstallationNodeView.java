@@ -27,7 +27,7 @@ public class putinsaverInstallationNodeView implements SwingInstallationNodeView
 	public void buildUI(JPanel panel, putinsaverInstallationNodeContribution contribution) {
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		
-		panel.add(createInfo("Start to save energy after 8min"));
+		panel.add(createInfo("Start to save energy after 12min"));
 		panel.add(createInfo(" "));
 		panel.add(createStartStopButtons(contribution));
 		panel.add(createInfo(" "));
