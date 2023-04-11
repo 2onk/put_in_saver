@@ -15,4 +15,6 @@ There is not much to configure:
 - turn on the saver and it will power off only the arm
 - the robot shutdown is only an option
 
+New: the actual cursor position is tracked and will prevent from powering off the robot arm while programing in polyscope
+
 ![image](https://user-images.githubusercontent.com/122785824/212656998-d98067ee-5481-4af9-9b7b-5d00352566ba.png)
