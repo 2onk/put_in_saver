@@ -1,5 +1,7 @@
 package com.put_in_saver.dasa.impl;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,11 +28,12 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 	private static final String ENABLED_KEY = "enabled";
 	private static final String ENABLEDSHUTDOWN_KEY = "disabled";
 	private static final Boolean DEFAULT_VALUE = false;
-	private final Integer POWEROFF_TIMER_IN_MIN = 12;
+	private final Integer POWEROFF_TIMER_IN_MIN = 15;
 	private final Integer SHUTDOWN_TIMER_IN_MIN = 90;
 
 	private String dashboardRunning = "Running";
 	private String dashboardRobotmode = "Robotmode";
+	private Point cursorPos;
 	private Integer tcpX = 0;
 	private Integer tcpY = 0;
 	private Integer tcpZ = 0;
@@ -78,7 +81,7 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		model.set(ENABLED_KEY, false);
 		applyDesiredSaverStatus();
 		resetShutdownCounter();
-		// TODO Auto-generated method stube
+		// TODO Auto-generated method stub
 		
 	}
 	
@@ -131,6 +134,7 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 				while(issaverEnabled()==true) {
 					//check if enabled and get robot status
 					try {
+						cursorPos = getcursorPos(); //get cursorpos
 						getRobotStatus();//get all needed information, running, mode and joints
 						awaitTimer(60000); //1 min timer
 			
@@ -174,19 +178,22 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		String runningActual = sendDashboardCommand("running");
 		String robotmodeActual = sendDashboardCommand("robotmode");
 		
+		Point posActual = getcursorPos();
 		Integer tcpXactual = getModbusHoldingRegister(400)/10;
 		Integer tcpYactual = getModbusHoldingRegister(401)/10;
 		Integer tcpZactual = getModbusHoldingRegister(402)/10;
 		
-		if(dashboardRunning.equals("Program running: false") == true &&  
-				dashboardRobotmode.equals("Robotmode: RUNNING") == true ||
-				dashboardRobotmode.equals("Robotmode: IDLE") == true) { //check if program running and robot powered on or in IDLE
-			if(dashboardRunning.equals(runningActual) == true &&  
-				dashboardRobotmode.equals(robotmodeActual) == true &&
-				tcpX.equals(tcpXactual) == true&&
-				tcpY.equals(tcpYactual) == true &&
-				tcpZ.equals(tcpZactual) == true) { //check if program running and robot powered on and position hasnt changed since 8 min
-					return true;
+		if(cursorPos.x == posActual.x && cursorPos.y == posActual.y) {
+			if(dashboardRunning.equals("Program running: false") == true &&  
+					dashboardRobotmode.equals("Robotmode: RUNNING") == true ||
+					dashboardRobotmode.equals("Robotmode: IDLE") == true) { //check if program running and robot powered on or in IDLE
+				if(dashboardRunning.equals(runningActual) == true &&  
+					dashboardRobotmode.equals(robotmodeActual) == true &&
+					tcpX.equals(tcpXactual) == true&&
+					tcpY.equals(tcpYactual) == true &&
+					tcpZ.equals(tcpZactual) == true) { //check if program running and robot powered on and position hasnt changed since 8 min
+						return true;
+				}
 			}
 		}
 		return false;
@@ -278,6 +285,11 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		while(System.nanoTime() < endTime && (issaverEnabled() != false)) {
 			Thread.sleep(100);
 		}
+	}
+	
+	private Point getcursorPos() {
+		Point cursorPos = MouseInfo.getPointerInfo().getLocation();
+		return cursorPos;
 	}
 
 }
