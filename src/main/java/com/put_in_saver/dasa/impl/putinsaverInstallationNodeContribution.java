@@ -49,7 +49,6 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 		this.model = model;
 		this.view = view;
 		applyDesiredSaverStatus();
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -239,14 +238,14 @@ public class putinsaverInstallationNodeContribution implements InstallationNodeC
 	
 	protected void poweroffArm() throws UnknownHostException, IOException, InterruptedException {
 		resetPowerOffCounter();
-		sendDashboardCommand("popup Roboterarm wird durch URCap in PowerOff geschickt");
+		sendDashboardCommand("popup Robot is going to be powered off due to Energy Saver URCAP");
 		Thread.sleep(5000);
 		sendDashboardCommand("power off");
 	}
 	
 	protected void shutdownRobot() throws UnknownHostException, IOException, InterruptedException {
 		resetShutdownCounter();
-		sendDashboardCommand("popup Der Roboter wird in 10s heruntergefahren");
+		sendDashboardCommand("popup The robot system will be shut down in 10s");
 		Thread.sleep(10000);
 		sendDashboardCommand("shutdown");
 	}
